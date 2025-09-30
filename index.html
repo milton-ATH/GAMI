@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EduQuest - Sistema de Niveles Educativo</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="m-0 p-0">
+    <div id="root"></div>
+    
+    <script type="text/babel">
+        const { useState } = React;
+        
+        // Componente principal EduQuest
+        const EduQuestGame = () => {
+          const [studentName, setStudentName] = useState('');
+          const [currentXP, setCurrentXP] = useState(0);
+          const [currentLevel, setCurrentLevel] = useState(1);
+          const [badges, setBadges] = useState([]);
+          const [completedMissions, setCompletedMissions] = useState([]);
+          const [selectedSubject, setSelectedSubject] = useState('');
+          const [gameStarted, setGameStarted] = useState(false);
+          const [currentActivity, setCurrentActivity] = useState(null);
+          const [activityAnswers, setActivityAnswers] = useState({});
+          const [showFeedback, setShowFeedback] = useState(false);
+
+          const levels = [
+            { level: 1, name: 'Aprendiz', xpNeeded: 0, color: 'bg-gray-400' },
+            { level: 2, name: 'Estudiante', xpNeeded: 100, color: 'bg-green-400' },
+            { level: 3, name: 'Explorador', xpNeeded: 250, color: 'bg-blue-400' },
+            { level: 4, name: 'Investigador', xpNeeded: 450, color: 'bg-purple-400' },
+            { level: 5, name: 'Maestro', xpNeeded: 700, color: 'bg-yellow-400' },
+          ];
+
+          const subjects = [
+            { id: 'matematicas', name: 'Matemáticas', icon: '🔢', color: 'bg-blue-100 border-blue-400' },
+            { id: 'ciencias', name: 'Ciencias', icon: '🔬', color: 'bg-green-100 border-green-400' },
+            { id: 'lenguaje', name: 'Lenguaje', icon: '📚', color: 'bg-purple-100 border-purple-400' },
+            { id: 'historia', name: 'Historia', icon: '🏛️', color: 'bg-yellow-100 border-yellow-400' },
+          ];
+
+          const missionsBySubject = {
+            matematicas: [
+              {
+                id: 'mat1',
+                title: 'Ecuaciones Lineales',
+                description: 'Resuelve 5 ecuaciones',
+                xp: 50,
+                badge: 'calculador',
+                activity: {
+                  questions: [
+                    { q: '2x + 5 = 15. ¿x = ?', options: ['3', '5', '10', '7'], correct: 1 },
+                    { q: '3x - 9 = 0. ¿x = ?', options: ['3', '9', '0', '6'], correct: 0 },
+                    { q: 'x/4 = 3. ¿x = ?', options: ['12', '7', '4', '3'], correct: 0 },
+                    { q: '5x + 2 = 17. ¿x = ?', options: ['2', '3', '4', '5'], correct: 1 },
+                    { q: '2(x + 3) = 14. ¿x = ?', options: ['4', '7', '5', '6'], correct: 0 }
+                  ]
+                }
+              },
+              {
+                id: 'mat2',
+                title: 'Geometría',
+                description: 'Calcula áreas y perímetros',
+                xp: 60,
+                badge: 'geometra',
+                activity: {
+                  questions: [
+                    { q: 'Área de cuadrado lado 5cm:', options: ['10 cm²', '20 cm²', '25 cm²', '15 cm²'], correct: 2 },
+                    { q: 'Perímetro rectángulo 6×4cm:', options: ['20 cm', '24 cm', '10 cm', '18 cm'], correct: 0 },
+                    { q: 'Área triángulo base 8cm, altura 5cm:', options: ['40 cm²', '13 cm²', '20 cm²', '25 cm²'], correct: 2 }
+                  ]
+                }
+              },
+              {
+                id: 'mat3',
+                title: 'Porcentajes',
+                description: 'Calcula porcentajes',
+                xp: 70,
+                badge: 'analista',
+                activity: {
+                  questions: [
+                    { q: '20% de 150:', options: ['20', '30', '40', '25'], correct: 1 },
+                    { q: '$40 con 25% descuento:', options: ['$30', '$35', '$25', '$32'], correct: 0 },
+                    { q: '80 de 100 puntos es:', options: ['70%', '75%', '80%', '85%'], correct: 2 }
+                  ]
+                }
+              }
+            ],
+            ciencias: [
+              {
+                id: 'cie1',
+                title: 'Sistema Solar',
+                description: 'Identifica planetas',
+                xp: 50,
+                badge: 'astronomo',
+                activity: {
+                  questions: [
+                    { q: 'Planeta más grande:', options: ['Saturno', 'Júpiter', 'Urano', 'Neptuno'], correct: 1 },
+                    { q: '¿Cuántos planetas hay?', options: ['7', '8', '9', '10'], correct: 1 },
+                    { q: 'Más cercano al Sol:', options: ['Venus', 'Tierra', 'Mercurio', 'Marte'], correct: 2 },
+                    { q: 'Planeta rojo:', options: ['Marte', 'Venus', 'Júpiter', 'Saturno'], correct: 0 }
+                  ]
+                }
+              },
+              {
+                id: 'cie2',
+                title: 'Estados de la Materia',
+                description: 'Cambios de estado',
+                xp: 55,
+                badge: 'quimico',
+                activity: {
+                  questions: [
+                    { q: 'Líquido a gas:', options: ['Condensación', 'Evaporación', 'Solidificación', 'Sublimación'], correct: 1 },
+                    { q: 'Forma y volumen definido:', options: ['Gas', 'Líquido', 'Sólido', 'Plasma'], correct: 2 },
+                    { q: 'Agua hierve a:', options: ['50°C', '100°C', '150°C', '0°C'], correct: 1 }
+                  ]
+                }
+              },
+              {
+                id: 'cie3',
+                title: 'Fotosíntesis',
+                description: 'Cómo las plantas producen alimento',
+                xp: 65,
+                badge: 'biologo',
+                activity: {
+                  questions: [
+                    { q: 'Plantas necesitan:', options: ['Agua y O₂', 'Luz y CO₂', 'Suelo y aire', 'Calor y agua'], correct: 1 },
+                    { q: 'Gas que liberan:', options: ['CO₂', 'Nitrógeno', 'Oxígeno', 'Hidrógeno'], correct: 2 },
+                    { q: 'Ocurre en:', options: ['Raíces', 'Tallos', 'Hojas', 'Flores'], correct: 2 }
+                  ]
+                }
+              }
+            ],
+            lenguaje: [
+              {
+                id: 'len1',
+                title: 'Ortografía',
+                description: 'Escritura correcta',
+                xp: 45,
+                badge: 'escritor',
+                activity: {
+                  questions: [
+                    { q: 'Palabra correcta:', options: ['Exelente', 'Excelente', 'Ecelente', 'Excelemte'], correct: 1 },
+                    { q: 'Correcta:', options: ['Habia', 'Havía', 'Había', 'Abia'], correct: 2 },
+                    { q: 'Bien escrita:', options: ['Dezir', 'Decir', 'Desir', 'Decír'], correct: 1 },
+                    { q: 'Correcta:', options: ['Jirafa', 'Girafa', 'Hirafa', 'Girapha'], correct: 0 }
+                  ]
+                }
+              },
+              {
+                id: 'len2',
+                title: 'Sinónimos y Antónimos',
+                description: 'Amplía vocabulario',
+                xp: 50,
+                badge: 'linguista',
+                activity: {
+                  questions: [
+                    { q: 'Sinónimo de "feliz":', options: ['Triste', 'Alegre', 'Enojado', 'Cansado'], correct: 1 },
+                    { q: 'Antónimo de "grande":', options: ['Enorme', 'Pequeño', 'Alto', 'Gordo'], correct: 1 },
+                    { q: 'Sinónimo de "inteligente":', options: ['Tonto', 'Listo', 'Alto', 'Fuerte'], correct: 1 }
+                  ]
+                }
+              },
+              {
+                id: 'len3',
+                title: 'Comprensión',
+                description: 'Lee y analiza',
+                xp: 70,
+                badge: 'lector',
+                activity: {
+                  text: 'María encontró un pájaro herido en el bosque. Lo cuidó en su casa durante semanas. Cuando se recuperó, lo liberó y el pájaro voló feliz.',
+                  questions: [
+                    { q: '¿Qué encontró María?', options: ['Un perro', 'Un pájaro', 'Un gato', 'Un conejo'], correct: 1 },
+                    { q: '¿Dónde lo cuidó?', options: ['En el bosque', 'En su casa', 'En el parque', 'En la escuela'], correct: 1 },
+                    { q: '¿Qué hizo al final?', options: ['Lo vendió', 'Lo regaló', 'Lo liberó', 'Se quedó con él'], correct: 2 }
+                  ]
+                }
+              }
+            ],
+            historia: [
+              {
+                id: 'his1',
+                title: 'Civilizaciones Antiguas',
+                description: 'Egipto, Grecia y Roma',
+                xp: 55,
+                badge: 'arqueologo',
+                activity: {
+                  questions: [
+                    { q: 'Los egipcios construyeron:', options: ['El Coliseo', 'Las Pirámides', 'El Partenón', 'La Muralla'], correct: 1 },
+                    { q: 'Origen de la democracia:', options: ['Roma', 'Egipto', 'Grecia', 'China'], correct: 2 },
+                    { q: 'Julio César fue:', options: ['Faraón', 'Emperador romano', 'Rey griego', 'General chino'], correct: 1 }
+                  ]
+                }
+              },
+              {
+                id: 'his2',
+                title: 'Descubrimiento de América',
+                description: 'El viaje de Colón',
+                xp: 60,
+                badge: 'explorador',
+                activity: {
+                  questions: [
+                    { q: 'Colón llegó en:', options: ['1492', '1500', '1600', '1450'], correct: 0 },
+                    { q: 'Financió el viaje:', options: ['Portugal', 'Inglaterra', 'España', 'Francia'], correct: 2 },
+                    { q: 'Colón buscaba:', options: ['Oro', 'Ruta a Asia', 'Tierras', 'Especias'], correct: 1 }
+                  ]
+                }
+              },
+              {
+                id: 'his3',
+                title: 'Revoluciones',
+                description: 'Cambios históricos',
+                xp: 70,
+                badge: 'historiador',
+                activity: {
+                  questions: [
+                    { q: 'Revolución Industrial en:', options: ['Francia', 'Inglaterra', 'USA', 'Alemania'], correct: 1 },
+                    { q: 'Rev. Francesa buscaba:', options: ['Libertad e igualdad', 'Conquista', 'Riqueza', 'Territorio'], correct: 0 },
+                    { q: 'Invento clave:', options: ['Computadora', 'Máquina de vapor', 'Teléfono', 'Automóvil'], correct: 1 }
+                  ]
+                }
+              }
+            ]
+          };
+
+          const availableBadges = {
+            calculador: { icon: '🧮', name: 'Calculador' },
+            geometra: { icon: '📐', name: 'Geómetra' },
+            analista: { icon: '📊', name: 'Analista' },
+            astronomo: { icon: '🌟', name: 'Astrónomo' },
+            quimico: { icon: '⚗️', name: 'Químico' },
+            biologo: { icon: '🌱', name: 'Biólogo' },
+            escritor: { icon: '✍️', name: 'Escritor' },
+            linguista: { icon: '📖', name: 'Lingüista' },
+            lector: { icon: '📚', name: 'Lector' },
+            arqueologo: { icon: '🏺', name: 'Arqueólogo' },
+            explorador: { icon: '🗺️', name: 'Explorador' },
+            historiador: { icon: '📜', name: 'Historiador' }
+          };
+
+          const startGame = () => {
+            if (studentName.trim() && selectedSubject) {
+              setGameStarted(true);
+            }
+          };
+
+          const openActivity = (mission) => {
+            if (!completedMissions.includes(mission.id)) {
+              setCurrentActivity(mission);
+              setActivityAnswers({});
+              setShowFeedback(false);
+            }
+          };
+
+          const handleAnswer = (qIndex, aIndex) => {
+            setActivityAnswers({ ...activityAnswers, [qIndex]: aIndex });
+          };
+
+          const submitActivity = () => {
+            const mission = currentActivity;
+            const questions = mission.activity.questions;
+            let correct = 0;
+
+            questions.forEach((q, i) => {
+              if (activityAnswers[i] === q.correct) correct++;
+            });
+
+            const percent = (correct / questions.length) * 100;
+            
+            if (percent >= 70) {
+              const newXP = currentXP + mission.xp;
+              setCurrentXP(newXP);
+              setCompletedMissions([...completedMissions, mission.id]);
+
+              for (let i = levels.length - 1; i >= 0; i--) {
+                if (newXP >= levels[i].xpNeeded) {
+                  setCurrentLevel(levels[i].level);
+                  break;
+                }
+              }
+
+              if (mission.badge && !badges.includes(mission.badge)) {
+                setBadges([...badges, mission.badge]);
+              }
+            }
+
+            setShowFeedback({ correct, total: questions.length, passed: percent >= 70 });
+          };
+
+          const closeActivity = () => {
+            setCurrentActivity(null);
+            setActivityAnswers({});
+            setShowFeedback(false);
+          };
+
+          const getProgress = () => {
+            const current = levels.find(l => l.level === currentLevel);
+            const next = levels.find(l => l.level === currentLevel + 1);
+            if (!next) return 100;
+            return Math.min(((currentXP - current.xpNeeded) / (next.xpNeeded - current.xpNeeded)) * 100, 100);
+          };
+
+          // Pantalla inicial
+          if (!gameStarted) {
+            return (
+              <div className="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 p-6">
+                <div className="max-w-2xl mx-auto bg-white rounded-3xl shadow-2xl p-8">
+                  <div className="text-center mb-8">
+                    <div className="text-6xl mb-4">🎯</div>
+                    <h1 className="text-4xl font-bold text-gray-800 mb-2">EduQuest</h1>
+                    <p className="text-gray-600">Completa misiones educativas reales</p>
+                  </div>
+
+                  <div className="space-y-6">
+                    <div>
+                      <label className="block text-gray-700 font-bold mb-2">Tu Nombre</label>
+                      <input
+                        type="text"
+                        value={studentName}
+                        onChange={(e) => setStudentName(e.target.value)}
+                        placeholder="Escribe tu nombre"
+                        className="w-full px-4 py-3 border-2 rounded-lg focus:border-purple-500 outline-none"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-gray-700 font-bold mb-3">Elige Materia</label>
+                      <div className="grid grid-cols-2 gap-4">
+                        {subjects.map((s) => (
+                          <button
+                            key={s.id}
+                            onClick={() => setSelectedSubject(s.id)}
+                            className={`p-4 border-2 rounded-lg transition-all ${
+                              selectedSubject === s.id ? `${s.color} scale-105 shadow-lg` : 'bg-gray-50 hover:shadow'
+                            }`}
+                          >
+                            <div className="text-4xl mb-2">{s.icon}</div>
+                            <div className="font-bold">{s.name}</div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={startGame}
+                      disabled={!studentName.trim() || !selectedSubject}
+                      className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold py-4 rounded-lg hover:from-purple-700 hover:to-pink-700 disabled:opacity-50 transition-all"
+                    >
+                      ¡Comenzar!
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          }
+
+          const missions = missionsBySubject[selectedSubject];
+          const subjectInfo = subjects.find(s => s.id === selectedSubject);
+          const levelInfo = levels.find(l => l.level === currentLevel);
+
+          // Vista de actividad
+          if (currentActivity) {
+            const activity = currentActivity.activity;
+            return (
+              <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 p-6">
+                <div className="max-w-3xl mx-auto bg-white rounded-2xl shadow-lg p-8">
+                  <div className="flex justify-between items-center mb-6">
+                    <h2 className="text-2xl font-bold flex items-center gap-2">
+                      <span>🎯</span>
+                      {currentActivity.title}
+                    </h2>
+                    <button onClick={closeActivity} className="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg font-bold">
+                      Cerrar
+                    </button>
+                  </div>
+
+                  {activity.text && (
+                    <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-4 mb-6">
+                      <p className="text-gray-800">{activity.text}</p>
+                    </div>
+                  )}
+
+                  <div className="space-y-4">
+                    {activity.questions.map((q, qi) => (
+                      <div key={qi} className="bg-gray-50 rounded-lg p-4">
+                        <p className="font-bold text-gray-800 mb-3">{qi + 1}. {q.q}</p>
+                        <div className="space-y-2">
+                          {q.options.map((opt, oi) => (
+                            <button
+                              key={oi}
+                              onClick={() => handleAnswer(qi, oi)}
+                              disabled={showFeedback}
+                              className={`w-full text-left px-4 py-2 rounded-lg border-2 transition-all ${
+                                activityAnswers[qi] === oi ? 'bg-purple-100 border-purple-500 font-bold' : 'bg-white border-gray-300 hover:border-purple-300'
+                              } ${showFeedback && oi === q.correct ? 'bg-green-100 border-green-500' : ''}
+                              ${showFeedback && activityAnswers[qi] === oi && oi !== q.correct ? 'bg-red-100 border-red-500' : ''}`}
+                            >
+                              {opt}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {!showFeedback ? (
+                    <button
+                      onClick={submitActivity}
+                      disabled={Object.keys(activityAnswers).length !== activity.questions.length}
+                      className="w-full mt-6 py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-lg hover:from-purple-700 hover:to-pink-700 disabled:opacity-50 transition-all"
+                    >
+                      Enviar Respuestas
+                    </button>
+                  ) : (
+                    <div className={`mt-6 p-6 rounded-lg ${showFeedback.passed ? 'bg-green-50 border-2 border-green-500' : 'bg-red-50 border-2 border-red-500'}`}>
+                      <h3 className={`text-xl font-bold mb-2 ${showFeedback.passed ? 'text-green-700' : 'text-red-700'}`}>
+                        {showFeedback.passed ? '¡Excelente! 🎉' : 'Inténtalo otra vez 💪'}
+                      </h3>
+                      <p className="mb-4">Correctas: {showFeedback.correct} de {showFeedback.total}</p>
+                      {showFeedback.passed && (
+                        <div className="flex items-center gap-2 font-bold text-green-700">
+                          <span>⚡</span>
+                          +{currentActivity.xp} XP
+                        </div>
+                      )}
+                      <button
+                        onClick={closeActivity}
+                        className="w-full mt-4 py-3 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-lg"
+                      >
+                        Continuar
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          }
+
+          // Juego principal
+          return (
+            <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 p-6">
+              <div className="max-w-6xl mx-auto">
+                <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
+                  <div className="flex justify-between items-center mb-4">
+                    <div className="flex items-center gap-4">
+                      <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white text-2xl font-bold">
+                        {studentName[0].toUpperCase()}
+                      </div>
+                      <div>
+                        <h2 className="text-2xl font-bold">{studentName}</h2>
+                        <span className={`px-3 py-1 rounded-full ${subjectInfo.color} font-bold text-sm`}>
+                          {subjectInfo.icon} {subjectInfo.name}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-3xl font-bold text-purple-600">{currentXP} XP</div>
+                      <div className="text-sm text-gray-600">Nivel {currentLevel}: {levelInfo.name}</div>
+                    </div>
+                  </div>
+
+                  <div className="w-full bg-gray-200 rounded-full h-4">
+                    <div className={`h-full ${levelInfo.color} rounded-full transition-all`} style={{ width: `${getProgress()}%` }} />
+                  </div>
+                </div>
+
+                <div className="grid lg:grid-cols-3 gap-6">
+                  <div className="lg:col-span-2 bg-white rounded-2xl shadow-lg p-6">
+                    <h3 className="text-2xl font-bold mb-4 flex items-center gap-2">
+                      <span>📚</span>
+                      Misiones
+                    </h3>
+                    <div className="space-y-4">
+                      {missions.map((m) => {
+                        const done = completedMissions.includes(m.id);
+                        return (
+                          <div key={m.id} className={`p-4 rounded-lg border-2 ${done ? 'bg-green-50 border-green-400' : 'bg-gray-50 border-gray-300'}`}>
+                            <div className="flex justify-between mb-3">
+                              <div>
+                                <h4 className="font-bold flex items-center gap-2">
+                                  {m.title}
+                                  {done && <span className="text-green-600">✓</span>}
+                                </h4>
+                                <p className="text-sm text-gray-600">{m.description}</p>
+                              </div>
+                              <div className="font-bold text-purple-600 flex items-center gap-1">
+                                <span>⚡</span>
+                                {m.xp}
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => openActivity(m)}
+                              disabled={done}
+                              className={`w-full py-3 rounded-lg font-bold ${
+                                done ? 'bg-green-200 text-green-800 cursor-not-allowed' : 'bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700'
+                              }`}
+                            >
+                              {done ? '✓ Completada' : '▶ Iniciar'}
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="space-y-6">
+                    <div className="bg-white rounded-2xl shadow-lg p-6">
+                      <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
+                        <span>🏆</span>
+                        Insignias
+                      </h3>
+                      <div className="grid grid-cols-3 gap-3">
+                        {missions.map(m => {
+                          const badge = availableBadges[m.badge];
+                          const earned = badges.includes(m.badge);
+                          return (
+                            <div key={m.badge} className={`p-3 rounded-lg text-center ${earned ? 'bg-yellow-100' : 'bg-gray-100 opacity-40'}`}>
+                              <div className="text-3xl mb-1">{badge.icon}</div>
+                              <div className="text-xs font-bold">{badge.name}</div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    <div className="bg-gradient-to-br from-purple-600 to-pink-600 rounded-2xl shadow-lg p-6 text-white">
+                      <h3 className="text-xl font-bold mb-3 flex items-center gap-2">
+                        <span>👑</span>
+                        Stats
+                      </h3>
+                      <div className="space-y-3">
+                        <div className="flex justify-between">
+                          <span>Completadas</span>
+                          <span className="font-bold text-2xl">{completedMissions.length}/{missions.length}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>XP Total</span>
+                          <span className="font-bold text-2xl">{currentXP}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Nivel</span>
+                          <span className="font-bold text-2xl">{currentLevel}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Insignias</span>
+                          <span className="font-bold text-2xl">{badges.length}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        };
+
+        // Renderizar
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<EduQuestGame />);
+    </script>
+</body>
+</html>
